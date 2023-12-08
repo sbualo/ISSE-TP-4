@@ -26,8 +26,14 @@ SPDX-License-Identifier: MIT
 /* === Headers files inclusions =============================================================== */
 
 #include "main.h"
+#include "gpio.h"
 
 /* === Macros definitions ====================================================================== */
+#define GPIO_A    1
+#define GPIO_B    2
+
+#define GPIO_PIN3 3
+#define GPIO_PIN5 5
 
 /* === Private data type declarations ========================================================== */
 
@@ -43,8 +49,25 @@ SPDX-License-Identifier: MIT
 
 /* === Public function implementation ========================================================== */
 
+/**
+ * @brief Función para setear un delay fijo
+ * @return void
+ */
+void Delay(void){};
+
 int main(void) {
 
+    GPIO_t led_rojo;
+    GPIO_t led_verde;
+
+    led_rojo = GPIO_Create(GPIO_A, GPIO_PIN3, GPIO_OUTPUT_MODE);
+    led_verde = GPIO_Create(GPIO_B, GPIO_PIN5, GPIO_OUTPUT_MODE);
+
+    while (1) {
+        GPIO_Set_State(led_rojo, GPIO_STATE_ON);
+        Delay();
+        GPIO_Set_State(led_rojo, GPIO_STATE_ON);
+    }
     return 0;
 }
 
