@@ -25,17 +25,22 @@ SPDX-License-Identifier: MIT
 
 /* === Headers files inclusions =============================================================== */
 
-#include "main.h"
 #include "gpio.h"
 
 /* === Macros definitions ====================================================================== */
-#define GPIO_A    1
-#define GPIO_B    2
-
-#define GPIO_PIN3 3
-#define GPIO_PIN5 5
 
 /* === Private data type declarations ========================================================== */
+//! estructura con los atributos de un puerto del uC
+struct GPIO_h {
+    uint8_t port; //! < Puerto del uC a utilizar (ej: GPIO_A)
+    uint8_t pin;  //! < Numero de pin asociado al puerto (ej: PIN_13)
+    GPIO_state_config_t
+        state; //! < Definicion del configuracion de modo del GPIO: input(false) o output(true)
+    GPIO_output_config_t output; //! < Estado del GPIO
+#ifdef USED_STATIC_MEMORY
+    bool used; //! < Flag para determinar si el GPIO esta en uso o no (false = un used)
+#endif
+};
 
 /* === Private variable declarations =========================================================== */
 
@@ -47,28 +52,61 @@ SPDX-License-Identifier: MIT
 
 /* === Private function implementation ========================================================= */
 
+#ifdef USE_STATIC_MEM
+static gpio_t GPIO_Allocate(void) {
+    static struct gpio_h instances[MAX_GPIO_INSTANCES] = {
+        0}; // !< Instancia del array para los gpio instances
+
+    gpio_t self = NULL;
+    for (int index = 0; index < MAX_GPIO_INSTANCES; index++) {
+        if (!instances[index].used) {
+            self = &instances[index];
+            self->used = true;
+            break;
+        }
+    }
+    return self;
+}
+#endif
+
 /* === Public function implementation ========================================================== */
 
-/**
- * @brief Función para setear un delay fijo
- * @return void
- */
-void Delay(void){};
+GPIO_t GPIO_Create(uint8_t port, uint8_t pin, GPIO_output_config_t output) {
 
-int main(void) {
+    GPIO_t self;
+#ifdef USED_STATIC_MEMORY
+    self = GPIO_Allocate();
+#else
+    self = malloc(sizeof(struct GPIO_h));
+#endif
 
-    GPIO_t led_rojo;
-    GPIO_t led_verde;
-
-    led_rojo = GPIO_Create(GPIO_A, GPIO_PIN3, GPIO_OUTPUT_MODE);
-    led_verde = GPIO_Create(GPIO_B, GPIO_PIN5, GPIO_OUTPUT_MODE);
-
-    while (1) {
-        GPIO_Set_State(led_rojo, GPIO_STATE_ON);
-        Delay();
-        GPIO_Set_State(led_rojo, GPIO_STATE_ON);
+    if (self) {
+        self->port = port;
+        self->pin = pin;
+        self->output = output;
+        self->state = false;
     }
-    return 0;
+    return self;
+}
+
+void GPIO_Set_Direction(GPIO_t self, GPIO_output_config_t output) {
+    self->output = output;
+}
+
+bool GPIO_Get_Direction(GPIO_t self) {
+    return self->output;
+}
+
+bool GPIO_Set_State(GPIO_t self, GPIO_state_config_t state) {
+    bool correctSet = false;
+    if (self->output) {
+        self->state = state;
+        correctSet = true;
+    }
+    return correctSet;
+}
+bool GPIO_Get_State(GPIO_t self) {
+    return self->state;
 }
 
 /* === End of documentation ==================================================================== */
